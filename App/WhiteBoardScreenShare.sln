@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WhiteBoardScreenShare", "App1\WhiteBoardScreenShare.csproj", "{A904AA98-12B8-481F-8C54-F7396F94403C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WhiteBoardScreenShare", "App\WhiteBoardScreenShare.csproj", "{A904AA98-12B8-481F-8C54-F7396F94403C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

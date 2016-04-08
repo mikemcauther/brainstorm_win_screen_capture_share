@@ -8,6 +8,13 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="20,20,20,20">
+            <ToggleButton x:Name="ToggleButtonConnect" Style="{StaticResource ResourceKey=FlatToggleButton}">
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Text="&#xE125;" FontFamily="Segoe UI Symbol" FontSize="25" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Connect" HorizontalAlignment="Center" FontFamily="Segoe UI" FontSize="14" FontWeight="SemiLight"/>
+                </StackPanel>
+            </ToggleButton>
+        </StackPanel>
     </Grid>
 </Page>

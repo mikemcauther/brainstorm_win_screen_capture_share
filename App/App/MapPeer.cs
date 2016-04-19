@@ -8,7 +8,6 @@ using Windows.Storage.Streams;
 
 namespace App {
     public class MapPeer {
-        public PeerInformation PeerInformation { get; set; }
         public StreamSocket StreamSocket { get; set; }
         public DataWriter DataWriter { get; set; }
         public DataReader DataReader { get; set; }

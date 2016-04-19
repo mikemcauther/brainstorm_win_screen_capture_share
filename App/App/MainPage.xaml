@@ -7,14 +7,38 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="20,20,20,20">
-            <ToggleButton x:Name="ToggleButtonConnect" Style="{StaticResource ResourceKey=FlatToggleButton}">
-                <StackPanel Orientation="Vertical">
-                    <TextBlock Text="&#xE125;" FontFamily="Segoe UI Symbol" FontSize="25" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Connect" HorizontalAlignment="Center" FontFamily="Segoe UI" FontSize="14" FontWeight="SemiLight"/>
-                </StackPanel>
-            </ToggleButton>
-        </StackPanel>
+    <Grid Background="White">
+        <Grid x:Name="Input" Grid.Row="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock x:Name="InputTextBlock1"  TextWrapping="Wrap" Grid.Row="0" Style="{StaticResource BasicTextStyle}" HorizontalAlignment="Left" >
+                When running this sample on a PC, you can use the WiFiDirectDevice API to connect to a Wi-Fi Direct device.
+            </TextBlock>
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="1">
+                <ComboBox x:Name="FoundDevicesList" Width="auto">
+                </ComboBox>
+                <Button x:Name="ConnectButton" Content="Connect" Margin="0,0,10,0" Click="Connect"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="2">
+                <TextBlock x:Name="PCIpAddress" Style="{StaticResource BasicTextStyle}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="3">
+                <TextBlock x:Name="DeviceIpAddress" Style="{StaticResource BasicTextStyle}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="4">
+                <Button x:Name="DisconnectButton" Content="Disconnect" Margin="0,0,10,0" Click="Disconnect"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid x:Name="Output" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1">
+             <!-- Output section -->
+             <TextBlock Text="Output" Grid.Row="5"  Margin="0,25,0,20" Style="{StaticResource H2Style}" Grid.ColumnSpan="2"/>
+             <TextBlock x:Name="StatusBlock" Grid.Row="6" Margin="0,0,0,5" Grid.ColumnSpan="2"/>
+        </Grid>
     </Grid>
 </Page>

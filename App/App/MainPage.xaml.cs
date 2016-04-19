@@ -17,6 +17,10 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using ImageSharing.WiFiDirect;
+using Windows.Networking;
+using Windows.Devices.Enumeration;
+using Windows.UI.Core;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -27,130 +31,145 @@ namespace App
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        private readonly ObservableCollection<MapPeer> _peers = new ObservableCollection<MapPeer>();
+        private WiFiDirectDeviceController wifiDirectDeviceController;
+        private MapPeer mapPeer;
+        public int WIFI_DIRECT_SERVER_SOCKET_PORT = 8988;
+
+        private bool isWifiDirectSupported = false;
         public MainPage()
         {
             this.InitializeComponent();
-            // Toggles - checked
-            this.ToggleButtonConnect.Checked += this.ToggleButton_Checked;
-            // Toggles - unchecked
-            this.ToggleButtonConnect.Unchecked += this.ToggleButton_Unchecked;
+
+            // Check if wifi-direct is support
+            isWifiDirectSupported = (PeerFinder.SupportedDiscoveryTypes & PeerDiscoveryTypes.Browse) == PeerDiscoveryTypes.Browse;
+
+            // Clear list
+            FoundDevicesList.Items.Clear();
+
+            // Register Wifi direct listener
+            wifiDirectDeviceController = new WiFiDirectDeviceController(this);
+            wifiDirectDeviceController.DevicesAvailable += new EventHandler(onWifiDevicesAvailable);
+            wifiDirectDeviceController.DeviceConnected += new EventHandler(onWifiDirectConnected);
+            wifiDirectDeviceController.DeviceDisConnected += new EventHandler(onWifiDirectDisConnected);
+
+            // Get wifi direct devices list
+            wifiDirectDeviceController.GetDevices();
+
         }
-        private async void ToggleButton_Checked(object sender, RoutedEventArgs e) {
-            if (sender == this.ToggleButtonConnect) {
-                // Open toast
-                //this.PopupNotifications.IsOpen = true;
 
-                // Check if wifi-direct is support
-                bool supported = (PeerFinder.SupportedDiscoveryTypes & PeerDiscoveryTypes.Browse) == PeerDiscoveryTypes.Browse;
-                if (!supported) {
-                    //await ProximityMapEnvironment.Default.Log("This device does not supported Wifi Direct", false);
-                    await Task.Delay(2000);
-                    //this.PopupNotifications.IsOpen = false;
-                    return;
-                }
-                // Start listening for proximate peers
-                PeerFinder.Start();
+        private void onWifiDevicesAvailable(object sender, EventArgs e) {
+            WiFiDirectDeviceController controller = (WiFiDirectDeviceController)sender;
+            DeviceInformationCollection devInfoCollection = controller.devInfoCollection;
 
-                // Be available for future connections
-                PeerFinder.ConnectionRequested += this.PeerConnectionRequested;
-
-                // Find peers
-                await this.ConnectToPeers();
+            FoundDevicesList.SelectedIndex = 0;
+            if (devInfoCollection.Count == 0)
+            {
+                this.NotifyUser("No WiFiDirect devices found.", NotifyType.StatusMessage);
             }
-            
-        }
-        private void ToggleButton_Unchecked(object sender, RoutedEventArgs e) {
-            if (sender == this.ToggleButtonConnect) {
-                // Start listening for proximate peers
-                PeerFinder.Stop();
-
-                // Be available for future connections
-                PeerFinder.ConnectionRequested -= this.PeerConnectionRequested;
-
-                // Dispose of connection and reconnect
-                this.Dispose();
-
-                // Update toast
-                //await ProximityMapEnvironment.Default.Log("Disconnecting...", true);
-                //this.PopupNotifications.IsOpen = false;
+            else
+            {
+                foreach (var devInfo in devInfoCollection)
+                {
+                    FoundDevicesList.Items.Add(devInfo.Name);
+                }
             }
         }
-        private async Task ConnectToPeers() {
-            // Find peers
-            //await ProximityMapEnvironment.Default.Log("Search for peers...", true);
-            IReadOnlyList<PeerInformation> peers = await PeerFinder.FindAllPeersAsync();
 
-            // No peers found?
-            if (peers == null || peers.Count == 0) { return; }
+        private async void onWifiDirectConnected(object sender, EventArgs e) {
+            WiFiDirectDeviceController controller = (WiFiDirectDeviceController)sender;
+            Windows.Devices.WiFiDirect.WiFiDirectDevice wfdDevice = controller.wfdDevice;
+            EndpointPair endpointPair = null;
 
-            // Connect to each peer
-            foreach (PeerInformation peer in peers) {
-                // Log
-                //await ProximityMapEnvironment.Default.Log(string.Format("Connecting to: {0}", peer.DisplayName), true);
+            // Get the EndpointPair collection
+            var EndpointPairCollection = controller.wfdDevice.GetConnectionEndpointPairs();
+            if (EndpointPairCollection.Count > 0)
+            {
+                endpointPair = EndpointPairCollection[0];
+            }
+            else
+            {
+                return;
+            }
 
-                // Connect to remote peer
-                StreamSocket socket = null;
-                try {
-                    socket = await PeerFinder.ConnectAsync(peer);
-                }
-                catch (Exception ex) {
-                    //Debug.WriteLine(ex.Message + Environment.NewLine + ex.StackTrace);
-                }
-                if (socket == null) {
-                    //await ProximityMapEnvironment.Default.Log("Connection failed", true);
-                    continue;
-                }
+            PCIpAddress.Text = "PC's IP Address: " + endpointPair.LocalHostName.ToString();
+            DeviceIpAddress.Text =  "Device's IP Address: " + endpointPair.RemoteHostName.ToString();
 
-                await this.PeerConnect(peer, socket);
+            await this.ConnectToPeers(endpointPair);
+            this.NotifyUser("Connection succeeded", NotifyType.StatusMessage);
+        }
+
+        private void onWifiDirectDisConnected(object sender, EventArgs e) {
+            this.NotifyUser("WiFiDirect device disconnected", NotifyType.ErrorMessage);
+
+            var ignored = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                // Clear the FoundDevicesList
+                FoundDevicesList.Items.Clear();
+            });
+
+            // Close Socket
+            this.ClosePeer(mapPeer);
+
+            this.NotifyUser("DisConnection succeeded", NotifyType.StatusMessage);
+        }
+
+        async void Connect(object sender, RoutedEventArgs e)
+        {
+            this.NotifyUser("", NotifyType.ErrorMessage);
+
+            // If nothing is selected, return
+            if (FoundDevicesList.SelectedIndex == -1)
+            {
+                this.NotifyUser("Please select a device", NotifyType.StatusMessage);
+                return;
+            }
+            else
+            {
+                await wifiDirectDeviceController.Connect(FoundDevicesList.SelectedIndex);
             }
         }
-        private async void PeerConnectionRequested(object sender, ConnectionRequestedEventArgs e) {
+
+        void Disconnect(object sender, RoutedEventArgs e)
+        {
+            this.NotifyUser("WiFiDirect device disconnected.", NotifyType.StatusMessage);
+
+            wifiDirectDeviceController.wfdDevice.Dispose();
+        }
+
+        private async Task ConnectToPeers(EndpointPair endpointPair) {
+            // Connect to remote peer
+            StreamSocket clientSocket = new StreamSocket();
             try {
-                // Log
-                //await ProximityMapEnvironment.Default.Log(string.Format("Connecting to: {0}", e.PeerInformation.DisplayName), true);
-
-                // Get socket
-                StreamSocket socket = null;
-                try {
-                    socket = await PeerFinder.ConnectAsync(e.PeerInformation);
-                }
-                catch (Exception ex) {
-                    //Debug.WriteLine(ex.Message + Environment.NewLine + ex.StackTrace);
-                }
-
-                if (socket == null) {
-                    await Task.Delay(TimeSpan.FromSeconds(1d));
-                    //await ProximityMapEnvironment.Default.Log("Search for peers...", true);
-                    return;
-                }
-
-                // Accept connection
-                await this.PeerConnect(e.PeerInformation, socket);
+                await clientSocket.ConnectAsync(endpointPair.RemoteHostName, WIFI_DIRECT_SERVER_SOCKET_PORT.ToString());
             }
             catch (Exception ex) {
                 //Debug.WriteLine(ex.Message + Environment.NewLine + ex.StackTrace);
+                this.NotifyUser(ex.Message + Environment.NewLine + ex.StackTrace, NotifyType.StatusMessage);
             }
+            if (clientSocket == null) {
+                //await ProximityMapEnvironment.Default.Log("Connection failed", true);
+                return;
+            }
+
+            await this.PeerConnect(clientSocket);
         }
-        private async Task PeerConnect(PeerInformation peer, StreamSocket socket) {
+
+        private async Task PeerConnect(StreamSocket socket) {
             // Store socket
             DataWriter writer = new DataWriter(socket.OutputStream);
             DataReader reader = new DataReader(socket.InputStream);
 
-            MapPeer mapPeer = new MapPeer() {
-                PeerInformation = peer,
+            mapPeer = new MapPeer() {
                 StreamSocket = socket,
                 DataReader = reader,
                 DataWriter = writer
             };
-            this._peers.Add(mapPeer);
-
-            // Listening
-            //await ProximityMapEnvironment.Default.Log("Listening...", true);
 
             // Commence send/recieve loop
-            await this.PeerReceive(mapPeer);
+            //await this.PeerReceive(mapPeer);
         }
+
+        /*
         private async Task PeerReceive(MapPeer peer) {
             try {
                 // Get body size
@@ -168,7 +187,6 @@ namespace App
                     return;
                 }
                 uint type = peer.DataReader.ReadUInt32();
-                /*
                 MessageType messageType = (MessageType)Enum.Parse(typeof(MessageType), type.ToString());
 
                 // Get body
@@ -202,7 +220,6 @@ namespace App
                         );
                         break;
                 }
-                */
                 // Wait for next message
                 await this.PeerReceive(peer);
             }
@@ -211,6 +228,8 @@ namespace App
                 //this.RemovePeer(peer);
             }
         }
+        */
+
         private void ClosePeer(MapPeer peer) {
             if (peer.StreamSocket != null) {
                 peer.StreamSocket.Dispose();
@@ -225,20 +244,37 @@ namespace App
                 peer.DataReader = null;
             }
         }
-        private async Task RemovePeer(MapPeer peer) {
-            this.ClosePeer(peer);
-            if (this._peers.Contains(peer)) {
-                this._peers.Remove(peer);
-            }
 
-            //
-            //await ProximityMapEnvironment.Default.Log("Search for peers...", true);
-        }
         public void Dispose() {
-            foreach (MapPeer peer in this._peers) {
-                this.ClosePeer(peer);
+            if(mapPeer != null) {
+                this.ClosePeer(mapPeer);
+                mapPeer = null;
             }
-            this._peers.Clear();
+        }
+
+        public async  void NotifyUser(string strMessage, NotifyType type)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                switch (type)
+                {
+                    // Use the status message style.
+                    case NotifyType.StatusMessage:
+                        StatusBlock.Style = Resources["StatusStyle"] as Style;
+                        break;
+                    // Use the error message style.
+                    case NotifyType.ErrorMessage:
+                        StatusBlock.Style = Resources["ErrorStyle"] as Style;
+                        break;
+                }
+                StatusBlock.Text = "\n" + strMessage;
+            });
         }
     }
+
+    public enum NotifyType
+    {
+        StatusMessage,
+        ErrorMessage
+    };
 }

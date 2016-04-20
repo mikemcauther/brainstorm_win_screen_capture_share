@@ -43,9 +43,6 @@ namespace App
             // Check if wifi-direct is support
             isWifiDirectSupported = (PeerFinder.SupportedDiscoveryTypes & PeerDiscoveryTypes.Browse) == PeerDiscoveryTypes.Browse;
 
-            // Clear list
-            FoundDevicesList.Items.Clear();
-
             // Register Wifi direct listener
             wifiDirectDeviceController = new WiFiDirectDeviceController(this);
             wifiDirectDeviceController.DevicesAvailable += new EventHandler(onWifiDevicesAvailable);
@@ -61,7 +58,9 @@ namespace App
             WiFiDirectDeviceController controller = (WiFiDirectDeviceController)sender;
             DeviceInformationCollection devInfoCollection = controller.devInfoCollection;
 
-            FoundDevicesList.SelectedIndex = 0;
+            // Clear list
+            FoundDevicesList.Items.Clear();
+
             if (devInfoCollection.Count == 0)
             {
                 this.NotifyUser("No WiFiDirect devices found.", NotifyType.StatusMessage);
@@ -72,6 +71,7 @@ namespace App
                 {
                     FoundDevicesList.Items.Add(devInfo.Name);
                 }
+                FoundDevicesList.SelectedIndex = 0;
             }
         }
 

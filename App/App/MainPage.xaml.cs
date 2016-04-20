@@ -99,6 +99,7 @@ namespace App
         }
 
         private void onWifiDirectDisConnected(object sender, EventArgs e) {
+            WiFiDirectDeviceController controller = (WiFiDirectDeviceController)sender;
             this.NotifyUser("WiFiDirect device disconnected", NotifyType.ErrorMessage);
 
             var ignored = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
@@ -108,9 +109,18 @@ namespace App
             });
 
             // Close Socket
-            this.ClosePeer(mapPeer);
+            if(mapPeer != null) {
+                this.ClosePeer(mapPeer);
+                mapPeer = null;
+            }
 
             this.NotifyUser("DisConnection succeeded", NotifyType.StatusMessage);
+
+            // Scan again
+            Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                controller.GetDevices();
+            });
         }
 
         async void Connect(object sender, RoutedEventArgs e)

@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap mp">
-  <Identity Name="61aa3151-af8d-45fa-802b-706ec309bbe0" Publisher="CN=Bruce.Chi" Version="1.0.0.0" />
+  <Identity Name="61aa3151-af8d-45fa-802b-706ec309bbe0" Publisher="CN=Bruce.Chi" Version="1.0.8.0" />
   <mp:PhoneIdentity PhoneProductId="61aa3151-af8d-45fa-802b-706ec309bbe0" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>App1</DisplayName>
@@ -20,6 +20,13 @@
         </uap:DefaultTile>
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
+      <Extensions>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="bswdprotocl">
+            <uap:Logo>Assets\Wide310x150Logo.scale-200.png</uap:Logo>
+          </uap:Protocol>
+        </uap:Extension>
+      </Extensions>
     </Application>
   </Applications>
   <Capabilities>

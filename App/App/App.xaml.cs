@@ -104,5 +104,40 @@ namespace App
             //TODO: Save application state and stop any background activity
             deferral.Complete();
         }
+
+        protected override void OnActivated(IActivatedEventArgs args)
+        {
+            if (args.Kind == ActivationKind.Protocol)
+            {
+                Frame rootFrame = null;
+
+                if (rootFrame == null)
+                {
+                    // Create a Frame to act as the navigation context and navigate to the first page
+                    rootFrame = new Frame();
+
+                    rootFrame.NavigationFailed += OnNavigationFailed;
+
+                    if (args.PreviousExecutionState == ApplicationExecutionState.Terminated)
+                    {
+                        //TODO: Load state from previously suspended application
+                    }
+
+                    // Place the frame in the current Window
+                    Window.Current.Content = rootFrame;
+                }
+
+                if (rootFrame.Content == null)
+                {
+                    if (!rootFrame.Navigate(typeof(MainPage)))
+                    {
+                        throw new Exception("Failed to create initial page");
+                    }
+                }
+
+                // Ensure the current window is active
+                Window.Current.Activate();
+            }
+        }
     }
 }

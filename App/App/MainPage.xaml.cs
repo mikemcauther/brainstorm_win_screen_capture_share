@@ -81,7 +81,7 @@ namespace App
             EndpointPair endpointPair = null;
 
             // Get the EndpointPair collection
-            var EndpointPairCollection = controller.wfdDevice.GetConnectionEndpointPairs();
+            var EndpointPairCollection = wfdDevice.GetConnectionEndpointPairs();
             if (EndpointPairCollection.Count > 0)
             {
                 endpointPair = EndpointPairCollection[0];
@@ -115,8 +115,6 @@ namespace App
 
         async void Connect(object sender, RoutedEventArgs e)
         {
-            this.NotifyUser("", NotifyType.ErrorMessage);
-
             // If nothing is selected, return
             if (FoundDevicesList.SelectedIndex == -1)
             {
@@ -133,7 +131,9 @@ namespace App
         {
             this.NotifyUser("WiFiDirect device disconnected.", NotifyType.StatusMessage);
 
-            wifiDirectDeviceController.wfdDevice.Dispose();
+            if(wifiDirectDeviceController.wfdDevice != null) {
+                wifiDirectDeviceController.wfdDevice.Dispose();
+            }
         }
 
         private async Task ConnectToPeers(EndpointPair endpointPair) {

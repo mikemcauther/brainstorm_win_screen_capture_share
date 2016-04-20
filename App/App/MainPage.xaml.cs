@@ -256,17 +256,6 @@ namespace App
         {
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                switch (type)
-                {
-                    // Use the status message style.
-                    case NotifyType.StatusMessage:
-                        StatusBlock.Style = Resources["StatusStyle"] as Style;
-                        break;
-                    // Use the error message style.
-                    case NotifyType.ErrorMessage:
-                        StatusBlock.Style = Resources["ErrorStyle"] as Style;
-                        break;
-                }
                 StatusBlock.Text = "\n" + strMessage;
             });
         }

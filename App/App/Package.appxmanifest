@@ -22,7 +22,7 @@
       </uap:VisualElements>
       <Extensions>
         <uap:Extension Category="windows.protocol">
-          <uap:Protocol Name="bswdprotocl">
+          <uap:Protocol Name="bswdprotocol">
             <uap:Logo>Assets\Wide310x150Logo.scale-200.png</uap:Logo>
           </uap:Protocol>
         </uap:Extension>

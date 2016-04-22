@@ -21,6 +21,8 @@ using ImageSharing.WiFiDirect;
 using Windows.Networking;
 using Windows.Devices.Enumeration;
 using Windows.UI.Core;
+using Windows.Storage.Pickers;
+using Windows.Storage;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -32,8 +34,10 @@ namespace App
     public sealed partial class MainPage : Page
     {
         private WiFiDirectDeviceController wifiDirectDeviceController;
-        private MapPeer mapPeer;
+        private SocketReaderWriter socketRW;
         public int WIFI_DIRECT_SERVER_SOCKET_PORT = 8988;
+        private string filePath;
+        private StorageFile storageFile;
 
         private bool isWifiDirectSupported = false;
         public MainPage()
@@ -52,6 +56,34 @@ namespace App
             // Get wifi direct devices list
             wifiDirectDeviceController.GetDevices();
 
+        }
+
+        protected async override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            filePath = e.Parameter as string;
+
+            string str = e.Parameter as string;
+            // Parse file path pattern : bswdprotocol:C:/Users/bon/Desktop/MyScreenCapture/QOPCTYPU-0.png
+            //index after bswdprotocol:
+            filePath = str.Substring(str.IndexOf("bswdprotocol:") + 13);
+            this.NotifyUser("got file path = " + filePath, NotifyType.KeepMessage);
+
+            FileOpenPicker openPicker = new FileOpenPicker();
+            openPicker.ViewMode = PickerViewMode.Thumbnail;
+            openPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+            openPicker.FileTypeFilter.Add(".jpg");
+            openPicker.FileTypeFilter.Add(".jpeg");
+            openPicker.FileTypeFilter.Add(".png");
+            storageFile = await openPicker.PickSingleFileAsync();
+            if (storageFile != null)
+            {
+                // Application now has read/write access to the picked file
+                this.NotifyUser("got file path = " + storageFile.Name, NotifyType.KeepMessage);
+            }
+            else
+            {
+                this.NotifyUser("Get file Operation cancelled.", NotifyType.StatusMessage);
+            }
         }
 
         private void onWifiDevicesAvailable(object sender, EventArgs e) {
@@ -96,6 +128,9 @@ namespace App
 
             await this.ConnectToPeers(endpointPair);
             this.NotifyUser("Connection succeeded", NotifyType.StatusMessage);
+
+            //await this.WritePng(filePath);
+            await socketRW.WritePng(storageFile);
         }
 
         private void onWifiDirectDisConnected(object sender, EventArgs e) {
@@ -109,9 +144,9 @@ namespace App
             });
 
             // Close Socket
-            if(mapPeer != null) {
-                this.ClosePeer(mapPeer);
-                mapPeer = null;
+            if(socketRW != null) {
+                socketRW.Dispose();
+                socketRW = null;
             }
 
             this.NotifyUser("DisConnection succeeded", NotifyType.StatusMessage);
@@ -161,104 +196,13 @@ namespace App
                 return;
             }
 
-            await this.PeerConnect(clientSocket);
-        }
-
-        private async Task PeerConnect(StreamSocket socket) {
-            // Store socket
-            DataWriter writer = new DataWriter(socket.OutputStream);
-            DataReader reader = new DataReader(socket.InputStream);
-
-            mapPeer = new MapPeer() {
-                StreamSocket = socket,
-                DataReader = reader,
-                DataWriter = writer
-            };
-
-            // Commence send/recieve loop
-            //await this.PeerReceive(mapPeer);
-        }
-
-        /*
-        private async Task PeerReceive(MapPeer peer) {
-            try {
-                // Get body size
-                uint bytesRead = await peer.DataReader.LoadAsync(sizeof(uint));
-                if (bytesRead == 0) {
-                    await this.RemovePeer(peer);
-                    return;
-                }
-                uint length = peer.DataReader.ReadUInt32();
-
-                // Get message type
-                uint bytesRead1 = await peer.DataReader.LoadAsync(sizeof(uint));
-                if (bytesRead1 == 0) {
-                    await this.RemovePeer(peer);
-                    return;
-                }
-                uint type = peer.DataReader.ReadUInt32();
-                MessageType messageType = (MessageType)Enum.Parse(typeof(MessageType), type.ToString());
-
-                // Get body
-                uint bytesRead2 = await peer.DataReader.LoadAsync(length);
-                if (bytesRead2 == 0) {
-                    await this.RemovePeer(peer);
-                    return;
-                }
-
-                // Get message
-                string message = peer.DataReader.ReadString(length);
-
-                // Process message
-                switch (messageType) {
-                    case MessageType.PanningExtent:
-                        await this.Dispatcher.RunAsync(
-                            CoreDispatcherPriority.Normal,
-                            () => {
-                                Envelope env = (Envelope)Envelope.FromJson(message);
-                                this.ProcessExtent(env);
-                            }
-                        );
-                        break;
-                    case MessageType.Ink:
-                        await this.Dispatcher.RunAsync(
-                            CoreDispatcherPriority.Normal,
-                            () => {
-                                MapInkLine line = MapInkLine.FromJson(message);
-                                this.ProcessInk(line);
-                            }
-                        );
-                        break;
-                }
-                // Wait for next message
-                await this.PeerReceive(peer);
-            }
-            catch (Exception ex) {
-                //Debug.WriteLine("Reading from socket failed: " + Environment.NewLine + ex.Message + Environment.NewLine + ex.StackTrace);
-                //this.RemovePeer(peer);
-            }
-        }
-        */
-
-        private void ClosePeer(MapPeer peer) {
-            if (peer.StreamSocket != null) {
-                peer.StreamSocket.Dispose();
-                peer.StreamSocket = null;
-            }
-            if (peer.DataWriter != null) {
-                peer.DataWriter.Dispose();
-                peer.DataWriter = null;
-            }
-            if (peer.DataReader != null) {
-                peer.DataReader.Dispose();
-                peer.DataReader = null;
-            }
+            socketRW = new SocketReaderWriter(clientSocket,this);
         }
 
         public void Dispose() {
-            if(mapPeer != null) {
-                this.ClosePeer(mapPeer);
-                mapPeer = null;
+            if(socketRW != null) {
+                socketRW.Dispose();
+                socketRW = null;
             }
         }
 
@@ -266,7 +210,15 @@ namespace App
         {
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                StatusBlock.Text = "\n" + strMessage;
+                switch(type){
+                    case NotifyType.StatusMessage:
+                    case NotifyType.ErrorMessage:
+                        StatusBlock.Text = "\n" + strMessage;
+                        break;
+                    case NotifyType.KeepMessage:
+                        StatusBlockForKeep.Text = "\n" + strMessage;
+                        break;
+                }
             });
         }
     }
@@ -274,6 +226,7 @@ namespace App
     public enum NotifyType
     {
         StatusMessage,
+        KeepMessage,
         ErrorMessage
     };
 }

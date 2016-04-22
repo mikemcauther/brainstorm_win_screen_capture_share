@@ -42,11 +42,13 @@
         <Grid x:Name="Output" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <!-- Output section -->
             <TextBlock Text="Output" Margin="0,25,0,20" Grid.Row="0" Grid.ColumnSpan="2"/>
             <TextBlock x:Name="StatusBlock" Margin="0,0,0,5" Grid.Row="1" Grid.ColumnSpan="2"/>
+            <TextBlock x:Name="StatusBlockForKeep" Margin="0,0,0,5" Grid.Row="2" Grid.ColumnSpan="2"/>
         </Grid>
     </Grid>
 </Page>

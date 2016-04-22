@@ -110,6 +110,8 @@ namespace App
             if (args.Kind == ActivationKind.Protocol)
             {
                 Frame rootFrame = null;
+                ProtocolActivatedEventArgs protocolArgs = args as ProtocolActivatedEventArgs;
+                Uri uri = protocolArgs.Uri;
 
                 if (rootFrame == null)
                 {
@@ -129,7 +131,7 @@ namespace App
 
                 if (rootFrame.Content == null)
                 {
-                    if (!rootFrame.Navigate(typeof(MainPage)))
+                    if (!rootFrame.Navigate(typeof(MainPage),uri.ToString()))
                     {
                         throw new Exception("Failed to create initial page");
                     }

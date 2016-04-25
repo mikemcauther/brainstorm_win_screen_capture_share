@@ -17,6 +17,9 @@ namespace App {
         DataWriter _dataWriter;
         StreamSocket _streamSocket;
         private MainPage _rootPage;
+        private int BUFFER_LENGTH = 512;
+        private long streamPosition = 0;
+        private uint streamSize = 0;
 
         public SocketReaderWriter(StreamSocket socket, MainPage mainPage)
         {
@@ -39,50 +42,16 @@ namespace App {
             _streamSocket.Dispose();
         }
 
-        public async void WriteMessage(string message)
-        {
-            try
-            {
-                _dataWriter.WriteUInt32(_dataWriter.MeasureString(message));
-                _dataWriter.WriteString(message);
-                await _dataWriter.StoreAsync();
-                _rootPage.NotifyUser("Sent message: " + message, NotifyType.StatusMessage);
-            }
-            catch (Exception ex)
-            {
-                _rootPage.NotifyUser("WriteMessage threw exception: " + ex.Message, NotifyType.KeepMessage);
-            }
-        }
-
-        public void WritePng(string filePath)
-        {
-
-            try
-            {
-                /*
-                Image image = Image.FromFile(filePath);
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                    byte[] imageBuffer = ms.GetBuffer();
-                    _dataWriter.WriteBytes(imageBuffer);
-                    await _dataWriter.StoreAsync();
-                    ms.Close();
-                }
-                */
-                _rootPage.NotifyUser("Png has been sent !", NotifyType.StatusMessage);
-            }
-            catch (Exception ex)
-            {
-                _rootPage.NotifyUser("WritePng() threw exception: " + ex.Message, NotifyType.KeepMessage);
-            }
-        }
-
         public async Task WritePng(StorageFile file)
         {
 
             try
             {
+
+                streamSize = (uint)(await (file as StorageFile).OpenStreamForReadAsync()).Length;
+                streamPosition = 0;
+                await Store(_dataWriter,file);
+                /*
                 using (IRandomAccessStream stream = await file.OpenAsync(FileAccessMode.Read))
                 {
                     // Read byte array from file
@@ -96,6 +65,7 @@ namespace App {
                         await _dataWriter.StoreAsync();
                     }
                 }
+                */
 
                 _rootPage.NotifyUser("Png has been sent !", NotifyType.StatusMessage);
             }
@@ -103,6 +73,54 @@ namespace App {
             {
                 _rootPage.NotifyUser("WritePng() threw exception: " + ex.Message, NotifyType.KeepMessage);
             }
+        }
+
+        private async Task Store(DataWriter writer, object stFile) {
+
+            Stream stream;
+
+            stream = await (stFile as StorageFile).OpenStreamForReadAsync();
+
+            using (stream)
+            {
+                int len = 0;
+                stream.Position = streamPosition;
+
+                long memAlloc = stream.Length - streamPosition < BUFFER_LENGTH ? stream.Length - streamPosition : BUFFER_LENGTH;
+                byte[] buffer = new byte[memAlloc];
+
+                while (writer.UnstoredBufferLength < memAlloc)
+                {
+                    len = stream.Read(buffer, 0, buffer.Length);
+                    if (len > 0)
+                    {
+                        writer.WriteBytes(buffer);
+                        streamPosition += len;
+                    }
+                }
+
+                try
+                {
+                    await writer.StoreAsync();
+                }
+                catch
+                {
+                    _rootPage.NotifyUser("Failed to store {0} bytes: " + writer.UnstoredBufferLength, NotifyType.KeepMessage);
+                }
+            }
+            // There is a leak somewhere that causes the stored stream
+            // to be cached instead of being properly disposed.
+            GC.Collect();
+
+            if (streamPosition < streamSize)
+            {
+                await Store(writer, stFile);
+            }
+            else
+            {
+                writer.Dispose();
+            }
+
         }
     }
 }

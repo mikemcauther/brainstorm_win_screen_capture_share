@@ -17,7 +17,7 @@ namespace App {
         DataWriter _dataWriter;
         StreamSocket _streamSocket;
         private MainPage _rootPage;
-        private int BUFFER_LENGTH = 512;
+        private int BUFFER_LENGTH = 1024;
         private long streamPosition = 0;
         private uint streamSize = 0;
 
@@ -118,7 +118,8 @@ namespace App {
             }
             else
             {
-                writer.Dispose();
+                //writer.Dispose();
+                this.Dispose();
             }
 
         }

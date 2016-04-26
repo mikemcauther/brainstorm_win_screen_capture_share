@@ -51,21 +51,6 @@ namespace App {
                 streamSize = (uint)(await (file as StorageFile).OpenStreamForReadAsync()).Length;
                 streamPosition = 0;
                 await Store(_dataWriter,file);
-                /*
-                using (IRandomAccessStream stream = await file.OpenAsync(FileAccessMode.Read))
-                {
-                    // Read byte array from file
-                    using (DataReader reader = new DataReader(stream.GetInputStreamAt(0)))
-                    {
-                        await reader.LoadAsync((uint)stream.Size);
-                        byte[] Bytes = new byte[stream.Size];
-
-                        // Write into socket
-                        _dataWriter.WriteBytes(Bytes);
-                        await _dataWriter.StoreAsync();
-                    }
-                }
-                */
 
                 _rootPage.NotifyUser("Png has been sent !", NotifyType.StatusMessage);
             }
@@ -116,12 +101,6 @@ namespace App {
             {
                 await Store(writer, stFile);
             }
-            else
-            {
-                //writer.Dispose();
-                this.Dispose();
-            }
-
         }
     }
 }

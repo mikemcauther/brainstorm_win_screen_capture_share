@@ -23,6 +23,7 @@ using Windows.Devices.Enumeration;
 using Windows.UI.Core;
 using Windows.Storage.Pickers;
 using Windows.Storage;
+using Windows.ApplicationModel.Core;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -129,8 +130,11 @@ namespace App
             await this.ConnectToPeers(endpointPair);
             this.NotifyUser("Connection succeeded", NotifyType.StatusMessage);
 
-            //await this.WritePng(filePath);
             await socketRW.WritePng(storageFile);
+            // Close Socket after sending one png file
+            socketRW.Dispose();
+
+            CoreApplication.Exit();
         }
 
         private void onWifiDirectDisConnected(object sender, EventArgs e) {
@@ -200,9 +204,13 @@ namespace App
         }
 
         public void Dispose() {
+            this.NotifyUser("App Will be closed", NotifyType.KeepMessage);
             if(socketRW != null) {
                 socketRW.Dispose();
                 socketRW = null;
+            }
+            if(wifiDirectDeviceController.wfdDevice != null) {
+                wifiDirectDeviceController.wfdDevice.Dispose();
             }
         }
 

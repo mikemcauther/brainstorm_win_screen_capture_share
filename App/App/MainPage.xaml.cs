@@ -25,6 +25,13 @@ using Windows.Storage.Pickers;
 using Windows.Storage;
 using Windows.ApplicationModel.Core;
 
+//Beacon
+using ImageSharing.Beacon;
+using Windows.Devices.Bluetooth;
+using Windows.Devices.Bluetooth.Advertisement;
+
+using System.Diagnostics; // Debug
+
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
 namespace App
@@ -39,6 +46,10 @@ namespace App
         public int WIFI_DIRECT_SERVER_SOCKET_PORT = 8988;
         private string filePath;
         private StorageFile storageFile;
+
+        // Bluetooth Beacons
+        private readonly BluetoothLEAdvertisementWatcher _watcher;
+        private readonly BeaconManager _beaconManager;
 
         private bool isWifiDirectSupported = false;
         public MainPage()
@@ -57,6 +68,13 @@ namespace App
             // Get wifi direct devices list
             wifiDirectDeviceController.GetDevices();
 
+            
+            // Create the Bluetooth LE watcher from the Windows 10 UWP
+            _watcher = new BluetoothLEAdvertisementWatcher { ScanningMode = BluetoothLEScanningMode.Active };
+
+            // Construct the Universal Bluetooth Beacon manager
+            _beaconManager = new BeaconManager();
+
         }
 
         protected async override void OnNavigatedTo(NavigationEventArgs e)
@@ -66,7 +84,7 @@ namespace App
             string str = e.Parameter as string;
             // Parse file path pattern : bswdprotocol:C:/Users/bon/Desktop/MyScreenCapture/QOPCTYPU-0.png
             //index after bswdprotocol:
-            filePath = str.Substring(str.IndexOf("bswdprotocol:") + 13);
+            //filePath = str.Substring(str.IndexOf("bswdprotocol:") + 13);
             this.NotifyUser("got file path = " + filePath, NotifyType.KeepMessage);
 
             FileOpenPicker openPicker = new FileOpenPicker();
@@ -85,6 +103,22 @@ namespace App
             {
                 this.NotifyUser("Get file Operation cancelled.", NotifyType.StatusMessage);
             }
+
+            // Start ble watching
+            _watcher.Received += WatcherOnReceived;
+            _watcher.Stopped += WatcherOnStopped;
+            _watcher.Start();
+            if (_watcher.Status == BluetoothLEAdvertisementWatcherStatus.Started)
+            {
+                //SetStatusOutput(_resourceLoader.GetString("WatchingForBeacons"));
+            }
+        }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            base.OnNavigatedFrom(e);
+            _watcher.Stop();
+            _watcher.Received -= WatcherOnReceived;
         }
 
         private void onWifiDevicesAvailable(object sender, EventArgs e) {
@@ -229,6 +263,96 @@ namespace App
                 }
             });
         }
+
+        //[+] Ryan, Beacon
+        void UpdateBeacon(object sender, RoutedEventArgs e)
+        {
+            // Clear list
+            BeaconsList.Items.Clear();
+
+            if (_beaconManager.BluetoothBeacons.Count == 0)
+            {
+                this.NotifyUser("No Beacon found.", NotifyType.StatusMessage);
+            }
+            else
+            {
+                foreach (var beacon in _beaconManager.BluetoothBeacons)
+                {
+                    BeaconsList.Items.Add(beacon.BluetoothAddress);
+                }
+                BeaconsList.SelectedIndex = 0;
+            }
+        }
+
+        void ConnectBeacon(object sender, RoutedEventArgs e)
+        {
+            //int selectedIndex = BeaconsList.SelectedIndex;
+            Object selectedItem = BeaconsList.SelectedItem;
+            foreach (var beacon in _beaconManager.BluetoothBeacons)
+            {
+                if (beacon.BluetoothAddress.Equals(selectedItem))
+                {
+                    Debug.WriteLine("BluetoothAddress:" + beacon.BluetoothAddress);
+                    Debug.WriteLine("MacAdd:" + beacon.MacAdd);
+                    BeaconContent.Text = beacon.MacAdd;
+                }
+            }
+        }
+
+        private async void WatcherOnReceived(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementReceivedEventArgs eventArgs)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                try
+                {
+                    _beaconManager.ReceivedAdvertisement(eventArgs);
+                }
+                catch (ArgumentException e)
+                {
+                    // Ignore for real-life scenarios.
+                    // In some very rare cases, analyzing the data can result in an
+                    // Argument_BufferIndexExceedsCapacity. Ignore the error here,
+                    // assuming that the next received frame advertisement will be
+                    // correct.
+                    Debug.WriteLine(e);
+                }
+            });
+            
+        }
+
+        private void WatcherOnStopped(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementWatcherStoppedEventArgs args)
+        {
+            string errorMsg = null;
+            if (args != null)
+            {
+                switch (args.Error)
+                {
+                    case BluetoothError.Success:
+                        errorMsg = "WatchingSuccessfullyStopped";
+                        break;
+                    case BluetoothError.RadioNotAvailable:
+                        errorMsg = "ErrorNoRadioAvailable";
+                        break;
+                    case BluetoothError.ResourceInUse:
+                        errorMsg = "ErrorResourceInUse";
+                        break;
+                    case BluetoothError.DeviceNotConnected:
+                        errorMsg = "ErrorDeviceNotConnected";
+                        break;
+                    case BluetoothError.DisabledByPolicy:
+                        errorMsg = "ErrorDisabledByPolicy";
+                        break;
+                    case BluetoothError.NotSupported:
+                        errorMsg = "ErrorNotSupported";
+                        break;
+                }
+            }
+            if (errorMsg == null)
+            {
+                // All other errors - generic error message
+            }
+        }
+        //[-] Ryan, Beacon
     }
 
     public enum NotifyType

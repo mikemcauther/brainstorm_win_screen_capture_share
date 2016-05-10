@@ -43,6 +43,7 @@ namespace ImageSharing.WiFiDirect
         public WiFiDirectDeviceController(MainPage mainPage)
         {
             rootPage = mainPage;
+            wfdDevice = null;
         }
 
         // This gets called when we receive a disconnect notification
@@ -51,7 +52,29 @@ namespace ImageSharing.WiFiDirect
             rootPage.NotifyUser("WiFiDirect device disconnected", NotifyType.ErrorMessage);
 
             devInfoCollection = null;
+            wfdDevice = null;
             DeviceDisConnected(this,EventArgs.Empty);
+        }
+
+        public bool isConnectingWifiP2p()
+        {
+            if(wfdDevice != null) {
+                return  true;
+            } else {
+                return  false;
+            }
+        }
+
+        public DeviceInformation findMatchedDevice(String wifiP2pMac)
+        {
+            foreach (var devInfo in devInfoCollection)
+            {
+                if (devInfo.Id.ToUpper().Contains(wifiP2pMac.ToUpper()))
+                {
+                    return devInfo;
+                }
+            }
+            return null;
         }
 
         public async Task Connect(int selectedIndex)
@@ -63,8 +86,13 @@ namespace ImageSharing.WiFiDirect
                 chosenDevInfo = devInfoCollection[selectedIndex];
                 rootPage.NotifyUser("Connecting to " + chosenDevInfo.Name + "(" + chosenDevInfo.Id + ")" + "....", NotifyType.StatusMessage);
 
+                // Set connect config 
+                WiFiDirectConnectionParameters parameter = new WiFiDirectConnectionParameters();
+                parameter.PreferredPairingProcedure = WiFiDirectPairingProcedure.Invitation;
+                parameter.GroupOwnerIntent = 0;
+
                 // Connect to the selected WiFiDirect device
-                wfdDevice = await Windows.Devices.WiFiDirect.WiFiDirectDevice.FromIdAsync(chosenDevInfo.Id);
+                wfdDevice = await Windows.Devices.WiFiDirect.WiFiDirectDevice.FromIdAsync(chosenDevInfo.Id,parameter);
 
                 if (wfdDevice == null)
                 {

@@ -23,7 +23,7 @@ namespace ImageSharing.Beacon
             }
         }
         private String _macAdd;
-        public String MacAdd
+        public String MacAddr
         {
             get { return _macAdd; }
             set
@@ -142,7 +142,7 @@ namespace ImageSharing.Beacon
                         }
 
                         IsWhiteBoard = true;
-                        MacAdd = macAdd;
+                        MacAddr = macAdd;
 
                         //Debug.WriteLine("This beacon is QisdaBeacon");
                         //Debug.WriteLine("macAdd : " + macAdd);

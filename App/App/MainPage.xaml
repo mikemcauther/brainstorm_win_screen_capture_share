@@ -24,26 +24,17 @@
                 When running this sample on a PC, you can use the WiFiDirectDevice API to connect to a Wi-Fi Direct device.
             </TextBlock>
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="1">
-                <ComboBox x:Name="BeaconsList" Width="auto"/>
-                <Button x:Name="UpdateBeaconButton" Content="UpdateBeacon" Margin="0,0,10,0" Click="UpdateBeacon"/>
-                <Button x:Name="ConnectBeaconButton" Content="ConnectBeacon" Margin="0,0,10,0" Click="ConnectBeacon"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="2">
-                
-                <TextBlock x:Name="BeaconContent"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="3">
                 <ComboBox x:Name="FoundDevicesList" Width="auto">
                 </ComboBox>
                 <Button x:Name="ConnectButton" Content="Connect" Margin="0,0,10,0" Click="Connect"/>
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="4">
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="2">
                 <TextBlock x:Name="PCIpAddress"/>
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="5">
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="3">
                 <TextBlock x:Name="DeviceIpAddress"/>
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="6">
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="4">
                 <Button x:Name="DisconnectButton" Content="Disconnect" Margin="0,0,10,0" Click="Disconnect"/>
             </StackPanel>
         </Grid>

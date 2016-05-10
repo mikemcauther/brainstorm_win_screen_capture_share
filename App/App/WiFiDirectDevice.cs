@@ -77,13 +77,11 @@ namespace ImageSharing.WiFiDirect
             return null;
         }
 
-        public async Task Connect(int selectedIndex)
+        public async Task Connect(DeviceInformation chosenDevInfo)
         {
             rootPage.NotifyUser("", NotifyType.ErrorMessage);
-            DeviceInformation chosenDevInfo = null;
             try
             {
-                chosenDevInfo = devInfoCollection[selectedIndex];
                 rootPage.NotifyUser("Connecting to " + chosenDevInfo.Name + "(" + chosenDevInfo.Id + ")" + "....", NotifyType.StatusMessage);
 
                 // Set connect config 

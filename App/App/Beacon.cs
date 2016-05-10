@@ -6,8 +6,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Devices.Bluetooth.Advertisement;
-
-
+using Windows.Devices.Enumeration;
 
 namespace ImageSharing.Beacon
 {
@@ -29,6 +28,16 @@ namespace ImageSharing.Beacon
             set
             {
                 _macAdd = value;
+            }
+        }
+
+        private DeviceInformation _wifiP2pDevice;
+        public DeviceInformation WifiP2pDevice
+        {
+            get { return _wifiP2pDevice; }
+            set
+            {
+                _wifiP2pDevice = value;
             }
         }
 

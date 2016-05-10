@@ -182,38 +182,43 @@ namespace App
 
         private async void updateUIList()
         {
-            // Clear list
-            FoundDevicesList.Items.Clear();
+            var ignored = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+            {
+                // Clear list
+                FoundDevicesList.Items.Clear();
 
-            if (_beaconManager.BluetoothBeacons.Count == 0)
-            {
-                this.NotifyUser("No Beacon found.", NotifyType.StatusMessage);
-            }
-            else
-            {
-                for(var i = 0; i < _beaconManager.BluetoothBeacons.Count; i ++)
+                if (_beaconManager.BluetoothBeacons.Count == 0)
                 {
-                    Beacon beacon = _beaconManager.BluetoothBeacons[i];
-                    if(beacon == null)
+                    this.NotifyUser("No Beacon found.", NotifyType.StatusMessage);
+                }
+                else
+                {
+                    for (var i = 0; i < _beaconManager.BluetoothBeacons.Count; i++)
                     {
-                        continue;
-                    }
-                    var matchedWifiDevice = wifiDirectDeviceController.findMatchedDevice(beacon.MacAddr);
+                        Beacon beacon = _beaconManager.BluetoothBeacons[i];
+                        if (beacon == null)
+                        {
+                            continue;
+                        }
+                        var matchedWifiDevice = wifiDirectDeviceController.findMatchedDevice(beacon.MacAddr);
 
-                    if(matchedWifiDevice == null) {
-                        FoundDevicesList.Items.Add("Unknown Wifi Mac");
-                    } else {
-                        FoundDevicesList.Items.Add(matchedWifiDevice.Name);
-                        beacon.WifiP2pDevice = matchedWifiDevice;
+                        if (matchedWifiDevice == null)
+                        {
+                            FoundDevicesList.Items.Add("Unknown Wifi Mac");
+                        }
+                        else {
+                            FoundDevicesList.Items.Add(matchedWifiDevice.Name);
+                            beacon.WifiP2pDevice = matchedWifiDevice;
+                        }
+                    }
+
+                    FoundDevicesList.SelectedIndex = 0;
+                    if (FoundDevicesList.Items.Count == 1)
+                    {
+                        await tryConnect();
                     }
                 }
-                    
-                FoundDevicesList.SelectedIndex = 0;
-                if(FoundDevicesList.Items.Count == 1)
-                {
-                    await tryConnect();
-                }
-            }
+            });
         }
 
         private async Task tryConnect()

@@ -37,6 +37,7 @@ namespace App {
 
         public void Dispose()
         {
+            _rootPage.NotifyUser("MapPeer will close socket !", NotifyType.StatusMessage);
             _dataReader.Dispose();
             _dataWriter.Dispose();
             _streamSocket.Dispose();
@@ -88,9 +89,9 @@ namespace App {
                 {
                     await writer.StoreAsync();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    _rootPage.NotifyUser("Failed to store {0} bytes: " + writer.UnstoredBufferLength, NotifyType.KeepMessage);
+                    _rootPage.NotifyUser("Failed to store {0} bytes: " + writer.UnstoredBufferLength + " threw exception : " + ex.Message, NotifyType.KeepMessage);
                 }
             }
             // There is a leak somewhere that causes the stored stream

@@ -195,28 +195,31 @@ namespace App
                 return;
             } 
 
-            // Clear list
-            FoundDevicesList.Items.Clear();
+            var ignored = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                // Clear list
+                FoundDevicesList.Items.Clear();
 
-            if (_beaconManager.BluetoothBeacons.Count == 0)
-            {
-                this.NotifyUser("No Beacon found.", NotifyType.StatusMessage);
-            }
-            else
-            {
-                for(var i = 0; i < _beaconManager.BluetoothBeacons.Count; i ++)
+                if (_beaconManager.BluetoothBeacons.Count == 0)
                 {
-                    Beacon becon = _beaconManager.BluetoothBeacons[i];
-                    var matchedWifiDevice = wifiDirectDeviceController.findMatchedDevice(becon.MacAddr);
-
-                    if(matchedWifiDevice == null) {
-                        FoundDevicesList.Items.Add("Unknown Wifi Mac");
-                    } else {
-                        FoundDevicesList.Items.Add(matchedWifiDevice.Name);
-                    }
+                    this.NotifyUser("No Beacon found.", NotifyType.StatusMessage);
                 }
-                FoundDevicesList.SelectedIndex = 0;
-            }
+                else
+                {
+                    for(var i = 0; i < _beaconManager.BluetoothBeacons.Count; i ++)
+                    {
+                        Beacon becon = _beaconManager.BluetoothBeacons[i];
+                        var matchedWifiDevice = wifiDirectDeviceController.findMatchedDevice(becon.MacAddr);
+
+                        if(matchedWifiDevice == null) {
+                            FoundDevicesList.Items.Add("Unknown Wifi Mac");
+                        } else {
+                            FoundDevicesList.Items.Add(matchedWifiDevice.Name);
+                        }
+                    }
+                    FoundDevicesList.SelectedIndex = 0;
+                }
+            });
         }
 
         async void Connect(object sender, RoutedEventArgs e)

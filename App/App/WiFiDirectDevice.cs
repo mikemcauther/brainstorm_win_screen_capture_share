@@ -77,6 +77,11 @@ namespace ImageSharing.WiFiDirect
             return null;
         }
 
+        public void triggerWifiP2pListUpdate()
+        {
+            DevicesAvailable(this,EventArgs.Empty);
+        }
+
         public async Task Connect(DeviceInformation chosenDevInfo)
         {
             rootPage.NotifyUser("", NotifyType.ErrorMessage);

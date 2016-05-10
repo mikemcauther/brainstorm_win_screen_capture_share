@@ -172,18 +172,15 @@ namespace App
                 return;
             } 
 
-            var ignored = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-            {
-                updateUIList();
-            });
+            wifiDirectDeviceController.triggerWifiP2pListUpdate();
         }
 
         async void Connect(object sender, RoutedEventArgs e)
         {
-            tryConnect();
+            await tryConnect();
         }
 
-        private void updateUIList()
+        private async void updateUIList()
         {
             // Clear list
             FoundDevicesList.Items.Clear();
@@ -214,12 +211,12 @@ namespace App
                 FoundDevicesList.SelectedIndex = 0;
                 if(FoundDevicesList.Items.Count == 1)
                 {
-                    tryConnect();
+                    await tryConnect();
                 }
             }
         }
 
-        private async void tryConnect()
+        private async Task tryConnect()
         {
             // If nothing is selected, return
             if (FoundDevicesList.SelectedIndex == -1)

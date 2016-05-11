@@ -9,15 +9,7 @@
 //*********************************************************
 
 using Windows.Foundation;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Navigation;
-using Windows.UI.Core;
-using Windows.Networking;
-using Windows.Networking.Sockets;
-using Windows.Storage.Streams;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Windows.Devices.Enumeration;
 using Windows.Devices.WiFiDirect;
@@ -84,7 +76,7 @@ namespace ImageSharing.WiFiDirect
 
         public async Task Connect(DeviceInformation chosenDevInfo)
         {
-            rootPage.NotifyUser("", NotifyType.ErrorMessage);
+            Debug.Write(" WiFiDirectDevice Connect() thread = " + Environment.CurrentManagedThreadId);
             try
             {
                 rootPage.NotifyUser("Connecting to " + chosenDevInfo.Name + "(" + chosenDevInfo.Id + ")" + "....", NotifyType.StatusMessage);

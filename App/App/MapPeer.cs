@@ -3,6 +3,7 @@
  * ----------------------------------------------- */
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Windows.Networking.Proximity;
@@ -44,6 +45,7 @@ namespace App {
         public async Task WritePng(StorageFile file)
         {
 
+            Debug.Write(" WritePng() thread = " + Environment.CurrentManagedThreadId);
             try
             {
                 await Store(_dataWriter,file);
@@ -63,6 +65,7 @@ namespace App {
             uint streamSize = 0;
 
 
+            Debug.Write(" Store() thread = " + Environment.CurrentManagedThreadId);
             while(isNeedContinue)
             {
                 using (var stream = await (stFile as StorageFile).OpenStreamForReadAsync())
@@ -91,6 +94,7 @@ namespace App {
                     catch (Exception ex)
                     {
                         _rootPage.NotifyUser("Failed to store {0} bytes: " + writer.UnstoredBufferLength + " threw exception : " + ex.Message, NotifyType.KeepMessage);
+                        Debug.WriteLine("");
                     }
                 }
                 // There is a leak somewhere that causes the stored stream

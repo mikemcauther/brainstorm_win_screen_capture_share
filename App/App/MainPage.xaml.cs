@@ -116,6 +116,7 @@ namespace App
                 this.NotifyUser("wifiDirect is connecting", NotifyType.KeepMessage);
                 return;
             } 
+            Debug.Write(" onWifiDevicesAvailable() thread = " + Environment.CurrentManagedThreadId);
             updateUIList();
         }
 
@@ -123,6 +124,8 @@ namespace App
             WiFiDirectDeviceController controller = (WiFiDirectDeviceController)sender;
             Windows.Devices.WiFiDirect.WiFiDirectDevice wfdDevice = controller.wfdDevice;
             EndpointPair endpointPair = null;
+
+            Debug.Write(" onWifiDirectConnected() thread = " + Environment.CurrentManagedThreadId);
 
             // Get the EndpointPair collection
             var EndpointPairCollection = wfdDevice.GetConnectionEndpointPairs();
@@ -175,7 +178,7 @@ namespace App
                 return;
             } 
 
-            wifiDirectDeviceController.triggerWifiP2pListUpdate();
+            //wifiDirectDeviceController.triggerWifiP2pListUpdate();
         }
 
         async void Connect(object sender, RoutedEventArgs e)
@@ -224,6 +227,8 @@ namespace App
 
         private async Task tryConnect()
         {
+            Debug.Write(" tryConnect() thread = " + Environment.CurrentManagedThreadId);
+
             // If nothing is selected, return
             if (FoundDevicesList.SelectedIndex == -1)
             {
@@ -245,6 +250,8 @@ namespace App
         }
 
         private async Task ConnectToPeers(EndpointPair endpointPair) {
+            Debug.Write(" ConnectToPeers() thread = " + Environment.CurrentManagedThreadId);
+
             // Connect to remote peer
             StreamSocket clientSocket = new StreamSocket();
             try {

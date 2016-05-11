@@ -66,13 +66,20 @@ namespace App
 
             // Get wifi direct devices list
             wifiDirectDeviceController.GetDevices();
-            
 
             // Construct the Universal Bluetooth Beacon manager
             _beaconManager = new BeaconManager();
             _beaconManager.DevicesAvailable += new EventHandler(onBleDevicesAvailable);
 
             _beaconManager.startScan();
+        }
+
+        ~MainPage()
+        {
+            _beaconManager.Dispose();
+            if(wifiDirectDeviceController.wfdDevice != null) {
+                wifiDirectDeviceController.wfdDevice.Dispose();
+            }
         }
 
         protected async override void OnNavigatedTo(NavigationEventArgs e)
@@ -104,14 +111,9 @@ namespace App
 
         }
 
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            base.OnNavigatedFrom(e);
-            _beaconManager.Dispose();
-        }
-
         private void onWifiDevicesAvailable(object sender, EventArgs e) {
             if(wifiDirectDeviceController.isConnectingWifiP2p()) {
+                this.NotifyUser("wifiDirect is connecting", NotifyType.KeepMessage);
                 return;
             } 
             updateUIList();
@@ -140,8 +142,15 @@ namespace App
             this.NotifyUser("Connection succeeded", NotifyType.StatusMessage);
 
             await socketRW.WritePng(storageFile);
+
+            await Task.Delay(1500);
             // Close Socket after sending one png file
-            socketRW.Dispose();
+            if(socketRW != null) {
+                socketRW.Dispose();
+                socketRW = null;
+            }
+
+            await Task.Delay(1500);
 
             CoreApplication.Exit();
         }
@@ -155,12 +164,6 @@ namespace App
                 // Clear the FoundDevicesList
                 FoundDevicesList.Items.Clear();
             });
-
-            // Close Socket
-            if(socketRW != null) {
-                socketRW.Dispose();
-                socketRW = null;
-            }
 
             this.NotifyUser("DisConnection succeeded", NotifyType.StatusMessage);
 
@@ -182,43 +185,41 @@ namespace App
 
         private async void updateUIList()
         {
-            var ignored = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+            if (_beaconManager.BluetoothBeacons.Count == 0)
+            {
+                this.NotifyUser("No Beacon found.", NotifyType.StatusMessage);
+                return;
+            }
+
+            var ignored = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
                 // Clear list
                 FoundDevicesList.Items.Clear();
 
-                if (_beaconManager.BluetoothBeacons.Count == 0)
+                for(var i = 0; i < _beaconManager.BluetoothBeacons.Count; i ++)
                 {
-                    this.NotifyUser("No Beacon found.", NotifyType.StatusMessage);
-                }
-                else
-                {
-                    for (var i = 0; i < _beaconManager.BluetoothBeacons.Count; i++)
+                    Beacon beacon = _beaconManager.BluetoothBeacons[i];
+                    if(beacon == null)
                     {
-                        Beacon beacon = _beaconManager.BluetoothBeacons[i];
-                        if (beacon == null)
-                        {
-                            continue;
-                        }
-                        var matchedWifiDevice = wifiDirectDeviceController.findMatchedDevice(beacon.MacAddr);
-
-                        if (matchedWifiDevice == null)
-                        {
-                            FoundDevicesList.Items.Add("Unknown Wifi Mac");
-                        }
-                        else {
-                            FoundDevicesList.Items.Add(matchedWifiDevice.Name);
-                            beacon.WifiP2pDevice = matchedWifiDevice;
-                        }
+                        continue;
                     }
+                    var matchedWifiDevice = wifiDirectDeviceController.findMatchedDevice(beacon.MacAddr);
 
-                    FoundDevicesList.SelectedIndex = 0;
-                    if (FoundDevicesList.Items.Count == 1)
-                    {
-                        await tryConnect();
+                    if(matchedWifiDevice == null) {
+                        FoundDevicesList.Items.Add("Unknown Wifi Mac");
+                    } else {
+                        FoundDevicesList.Items.Add(matchedWifiDevice.Name);
+                        beacon.WifiP2pDevice = matchedWifiDevice;
                     }
                 }
+
+                FoundDevicesList.SelectedIndex = 0;
             });
+                    
+            if(FoundDevicesList.Items.Count == 1)
+            {
+                await tryConnect();
+            }
         }
 
         private async Task tryConnect()
@@ -229,11 +230,9 @@ namespace App
                 this.NotifyUser("Please select a device", NotifyType.StatusMessage);
                 return;
             }
-            else
-            {
-                Beacon beacon = _beaconManager.BluetoothBeacons[FoundDevicesList.SelectedIndex];
-                await wifiDirectDeviceController.Connect(beacon.WifiP2pDevice);
-            }
+
+            Beacon beacon = _beaconManager.BluetoothBeacons[FoundDevicesList.SelectedIndex];
+            await wifiDirectDeviceController.Connect(beacon.WifiP2pDevice);
         }
 
         void Disconnect(object sender, RoutedEventArgs e)
@@ -261,17 +260,6 @@ namespace App
             }
 
             socketRW = new SocketReaderWriter(clientSocket,this);
-        }
-
-        public void Dispose() {
-            this.NotifyUser("App Will be closed", NotifyType.KeepMessage);
-            if(socketRW != null) {
-                socketRW.Dispose();
-                socketRW = null;
-            }
-            if(wifiDirectDeviceController.wfdDevice != null) {
-                wifiDirectDeviceController.wfdDevice.Dispose();
-            }
         }
 
         public async  void NotifyUser(string strMessage, NotifyType type)

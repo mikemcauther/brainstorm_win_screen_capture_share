@@ -18,8 +18,6 @@ namespace App {
         StreamSocket _streamSocket;
         private MainPage _rootPage;
         private int BUFFER_LENGTH = 1024;
-        private long streamPosition = 0;
-        private uint streamSize = 0;
 
         public SocketReaderWriter(StreamSocket socket, MainPage mainPage)
         {
@@ -48,12 +46,9 @@ namespace App {
 
             try
             {
-
-                streamSize = (uint)(await (file as StorageFile).OpenStreamForReadAsync()).Length;
-                streamPosition = 0;
                 await Store(_dataWriter,file);
 
-                _rootPage.NotifyUser("Png has been sent !", NotifyType.StatusMessage);
+                _rootPage.NotifyUser("Png has been sent !", NotifyType.KeepMessage);
             }
             catch (Exception ex)
             {
@@ -64,43 +59,52 @@ namespace App {
         private async Task Store(DataWriter writer, object stFile) {
 
             Stream stream;
+            bool isNeedContinue = true;
+            long streamPosition = 0;
+            uint streamSize = 0;
 
             stream = await (stFile as StorageFile).OpenStreamForReadAsync();
+            streamSize = (uint)stream.Length;
 
-            using (stream)
+            while(isNeedContinue)
             {
-                int len = 0;
-                stream.Position = streamPosition;
-
-                long memAlloc = stream.Length - streamPosition < BUFFER_LENGTH ? stream.Length - streamPosition : BUFFER_LENGTH;
-                byte[] buffer = new byte[memAlloc];
-
-                while (writer.UnstoredBufferLength < memAlloc)
+                using (stream)
                 {
-                    len = stream.Read(buffer, 0, buffer.Length);
-                    if (len > 0)
+                    int len = 0;
+                    stream.Position = streamPosition;
+
+                    long memAlloc = streamSize - streamPosition < BUFFER_LENGTH ? streamSize - streamPosition : BUFFER_LENGTH;
+                    byte[] buffer = new byte[memAlloc];
+
+                    while (writer.UnstoredBufferLength < memAlloc)
                     {
-                        writer.WriteBytes(buffer);
-                        streamPosition += len;
+                        len = stream.Read(buffer, 0, buffer.Length);
+                        if (len > 0)
+                        {
+                            writer.WriteBytes(buffer);
+                            streamPosition += len;
+                        }
+                    }
+
+                    try
+                    {
+                        await writer.StoreAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        _rootPage.NotifyUser("Failed to store {0} bytes: " + writer.UnstoredBufferLength + " threw exception : " + ex.Message, NotifyType.KeepMessage);
                     }
                 }
+                // There is a leak somewhere that causes the stored stream
+                // to be cached instead of being properly disposed.
+                GC.Collect();
 
-                try
+                if (streamPosition < streamSize)
                 {
-                    await writer.StoreAsync();
+                    isNeedContinue = true;
+                } else {
+                    isNeedContinue = false;
                 }
-                catch (Exception ex)
-                {
-                    _rootPage.NotifyUser("Failed to store {0} bytes: " + writer.UnstoredBufferLength + " threw exception : " + ex.Message, NotifyType.KeepMessage);
-                }
-            }
-            // There is a leak somewhere that causes the stored stream
-            // to be cached instead of being properly disposed.
-            GC.Collect();
-
-            if (streamPosition < streamSize)
-            {
-                await Store(writer, stFile);
             }
         }
     }

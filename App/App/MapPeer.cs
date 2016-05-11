@@ -58,19 +58,17 @@ namespace App {
 
         private async Task Store(DataWriter writer, object stFile) {
 
-            Stream stream;
             bool isNeedContinue = true;
             long streamPosition = 0;
             uint streamSize = 0;
 
-            stream = await (stFile as StorageFile).OpenStreamForReadAsync();
-            streamSize = (uint)stream.Length;
 
             while(isNeedContinue)
             {
-                using (stream)
+                using (var stream = await (stFile as StorageFile).OpenStreamForReadAsync())
                 {
                     int len = 0;
+                    streamSize = (uint)stream.Length;
                     stream.Position = streamPosition;
 
                     long memAlloc = streamSize - streamPosition < BUFFER_LENGTH ? streamSize - streamPosition : BUFFER_LENGTH;

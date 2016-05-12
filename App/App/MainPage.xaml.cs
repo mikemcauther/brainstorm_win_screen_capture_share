@@ -131,6 +131,15 @@ namespace App
             var EndpointPairCollection = wfdDevice.GetConnectionEndpointPairs();
             if (EndpointPairCollection.Count > 0)
             {
+                Debug.Write(Environment.NewLine + "onWifiDirectConnected()");
+                foreach (var EndpointPair in EndpointPairCollection)
+                {
+                    Debug.Write(Environment.NewLine + "endpointPair.LocalHostName = " + EndpointPair.LocalHostName);
+                    Debug.Write(Environment.NewLine + "endpointPair.LocalServiceName = " + EndpointPair.LocalServiceName);
+
+                    Debug.Write(Environment.NewLine + "endpointPair.RemoteHostName = " + EndpointPair.RemoteHostName);
+                    Debug.Write(Environment.NewLine + "endpointPair.RemoteServiceName = " + EndpointPair.RemoteServiceName);
+                }
                 endpointPair = EndpointPairCollection[0];
             }
             else
@@ -151,6 +160,20 @@ namespace App
             if(socketRW != null) {
                 socketRW.Dispose();
                 socketRW = null;
+                // Get the EndpointPair collection
+                EndpointPairCollection = wfdDevice.GetConnectionEndpointPairs();
+                if (EndpointPairCollection.Count > 0)
+                {
+                    Debug.Write(Environment.NewLine + "onWifiDirectConnected()");
+                    foreach (var EndpointPair in EndpointPairCollection)
+                    {
+                        Debug.Write(Environment.NewLine + "endpointPair.LocalHostName = " + EndpointPair.LocalHostName);
+                        Debug.Write(Environment.NewLine + "endpointPair.LocalServiceName = " + EndpointPair.LocalServiceName);
+
+                        Debug.Write(Environment.NewLine + "endpointPair.RemoteHostName = " + EndpointPair.RemoteHostName);
+                        Debug.Write(Environment.NewLine + "endpointPair.RemoteServiceName = " + EndpointPair.RemoteServiceName);
+                    }
+                }
             }
 
             await Task.Delay(1500);
@@ -260,6 +283,11 @@ namespace App
             catch (Exception ex) {
                 //Debug.WriteLine(ex.Message + Environment.NewLine + ex.StackTrace);
                 this.NotifyUser(ex.Message + Environment.NewLine + ex.StackTrace, NotifyType.StatusMessage);
+                if (clientSocket != null) {
+                    clientSocket.Dispose();
+                    clientSocket = null;
+                    return;
+                }
             }
             if (clientSocket == null) {
                 //await ProximityMapEnvironment.Default.Log("Connection failed", true);

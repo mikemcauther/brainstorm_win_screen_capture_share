@@ -278,7 +278,7 @@ namespace App
             // Connect to remote peer
             StreamSocket clientSocket = new StreamSocket();
             try {
-                await clientSocket.ConnectAsync(endpointPair.RemoteHostName, WIFI_DIRECT_SERVER_SOCKET_PORT.ToString());
+                await clientSocket.ConnectAsync(endpointPair.RemoteHostName, WIFI_DIRECT_SERVER_SOCKET_PORT);
             }
             catch (Exception ex) {
                 //Debug.WriteLine(ex.Message + Environment.NewLine + ex.StackTrace);

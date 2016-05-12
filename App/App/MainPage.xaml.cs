@@ -31,6 +31,7 @@ using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 
 using System.Diagnostics; // Debug
+using Windows.Networking.Connectivity;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -278,7 +279,13 @@ namespace App
             // Connect to remote peer
             StreamSocket clientSocket = new StreamSocket();
             try {
-                await clientSocket.ConnectAsync(endpointPair.RemoteHostName, WIFI_DIRECT_SERVER_SOCKET_PORT);
+                // Find match adapter
+                foreach (HostName localHostInfo in NetworkInformation.GetHostNames())
+                {
+                    Debug.WriteLine(Environment.NewLine + "localHostInfo.DisplayName = " + localHostInfo.DisplayName);
+                    //localHostInfo.IPInformation.NetworkAdapter
+                }
+                await clientSocket.ConnectAsync(endpointPair.RemoteHostName, WIFI_DIRECT_SERVER_SOCKET_PORT.ToString());
             }
             catch (Exception ex) {
                 //Debug.WriteLine(ex.Message + Environment.NewLine + ex.StackTrace);

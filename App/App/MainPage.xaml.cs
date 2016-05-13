@@ -31,7 +31,6 @@ using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 
 using System.Diagnostics; // Debug
-using Windows.Networking.Connectivity;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -117,7 +116,6 @@ namespace App
                 this.NotifyUser("wifiDirect is connecting", NotifyType.KeepMessage);
                 return;
             } 
-            Debug.Write(" onWifiDevicesAvailable() thread = " + Environment.CurrentManagedThreadId);
             updateUIList();
         }
 
@@ -126,21 +124,10 @@ namespace App
             Windows.Devices.WiFiDirect.WiFiDirectDevice wfdDevice = controller.wfdDevice;
             EndpointPair endpointPair = null;
 
-            Debug.Write(" onWifiDirectConnected() thread = " + Environment.CurrentManagedThreadId);
-
             // Get the EndpointPair collection
             var EndpointPairCollection = wfdDevice.GetConnectionEndpointPairs();
             if (EndpointPairCollection.Count > 0)
             {
-                Debug.Write(Environment.NewLine + "onWifiDirectConnected()");
-                foreach (var EndpointPair in EndpointPairCollection)
-                {
-                    Debug.Write(Environment.NewLine + "endpointPair.LocalHostName = " + EndpointPair.LocalHostName);
-                    Debug.Write(Environment.NewLine + "endpointPair.LocalServiceName = " + EndpointPair.LocalServiceName);
-
-                    Debug.Write(Environment.NewLine + "endpointPair.RemoteHostName = " + EndpointPair.RemoteHostName);
-                    Debug.Write(Environment.NewLine + "endpointPair.RemoteServiceName = " + EndpointPair.RemoteServiceName);
-                }
                 endpointPair = EndpointPairCollection[0];
             }
             else
@@ -150,6 +137,9 @@ namespace App
 
             PCIpAddress.Text = "PC's IP Address: " + endpointPair.LocalHostName.ToString();
             DeviceIpAddress.Text =  "Device's IP Address: " + endpointPair.RemoteHostName.ToString();
+
+            // Note We must delaly between wifi direct connected and socket connecting
+            await Task.Delay(1500);
 
             await this.ConnectToPeers(endpointPair);
             this.NotifyUser("Connection succeeded", NotifyType.StatusMessage);
@@ -161,20 +151,6 @@ namespace App
             if(socketRW != null) {
                 socketRW.Dispose();
                 socketRW = null;
-                // Get the EndpointPair collection
-                EndpointPairCollection = wfdDevice.GetConnectionEndpointPairs();
-                if (EndpointPairCollection.Count > 0)
-                {
-                    Debug.Write(Environment.NewLine + "onWifiDirectConnected()");
-                    foreach (var EndpointPair in EndpointPairCollection)
-                    {
-                        Debug.Write(Environment.NewLine + "endpointPair.LocalHostName = " + EndpointPair.LocalHostName);
-                        Debug.Write(Environment.NewLine + "endpointPair.LocalServiceName = " + EndpointPair.LocalServiceName);
-
-                        Debug.Write(Environment.NewLine + "endpointPair.RemoteHostName = " + EndpointPair.RemoteHostName);
-                        Debug.Write(Environment.NewLine + "endpointPair.RemoteServiceName = " + EndpointPair.RemoteServiceName);
-                    }
-                }
             }
 
             await Task.Delay(1500);
@@ -251,8 +227,6 @@ namespace App
 
         private async Task tryConnect()
         {
-            Debug.Write(" tryConnect() thread = " + Environment.CurrentManagedThreadId);
-
             // If nothing is selected, return
             if (FoundDevicesList.SelectedIndex == -1)
             {
@@ -274,17 +248,9 @@ namespace App
         }
 
         private async Task ConnectToPeers(EndpointPair endpointPair) {
-            Debug.Write(" ConnectToPeers() thread = " + Environment.CurrentManagedThreadId);
-
             // Connect to remote peer
             StreamSocket clientSocket = new StreamSocket();
             try {
-                // Find match adapter
-                foreach (HostName localHostInfo in NetworkInformation.GetHostNames())
-                {
-                    Debug.WriteLine(Environment.NewLine + "localHostInfo.DisplayName = " + localHostInfo.DisplayName);
-                    //localHostInfo.IPInformation.NetworkAdapter
-                }
                 await clientSocket.ConnectAsync(endpointPair.RemoteHostName, WIFI_DIRECT_SERVER_SOCKET_PORT.ToString());
             }
             catch (Exception ex) {
